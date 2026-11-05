@@ -5,6 +5,14 @@ import { levelColor } from '../lib/kanji'
 const WIDTH = 900
 const HEIGHT = 620
 
+function linkPath(d) {
+  const s = d.source
+  const t = d.target
+  const x0 = s.x, y0 = s.y, x1 = t.x, y1 = t.y
+  const dx = Math.max(30, Math.abs(x1 - x0) * 0.5)
+  return `M ${x0} ${y0} C ${x0 + dx} ${y0}, ${x1 - dx} ${y1}, ${x1} ${y1}`
+}
+
 export default function MindmapGraph({ nodes, links, selected, onSelect }) {
   const svgRef = useRef(null)
   const stateRef = useRef({ sim: null })
@@ -18,8 +26,8 @@ export default function MindmapGraph({ nodes, links, selected, onSelect }) {
     const svg = d3.select(svgEl)
     svg.selectAll('*').remove()
     const g = svg.append('g').attr('class', 'mindmap-root')
-    const link = g.append('g').attr('class', 'mindmap-links').selectAll('line').data(links || []).join('line')
-      .attr('stroke', '#cfccc4').attr('stroke-width', 1.5).attr('class', 'mindmap-link')
+    const link = g.append('g').attr('class', 'mindmap-links').selectAll('path').data(links || []).join('path')
+      .attr('stroke', '#cfccc4').attr('stroke-width', 1.5).attr('class', 'mindmap-link').attr('d', d => linkPath(d))
     const node = g.append('g').attr('class', 'mindmap-nodes').selectAll('g').data(nodes).join('g')
       .attr('class', 'mindmap-node')
     node.on('click', (event, d) => {
@@ -35,16 +43,21 @@ export default function MindmapGraph({ nodes, links, selected, onSelect }) {
       .force('center', d3.forceCenter(WIDTH / 2, HEIGHT / 2))
       .force('collide', d3.forceCollide(55))
       .on('tick', () => {
-        link.attr('x1', d => (d.source.x ?? d.x)).attr('y1', d => (d.source.y ?? d.y))
-           .attr('x2', d => (d.target.x ?? d.x)).attr('y2', d => (d.target.y ?? d.y))
+        link.attr('d', d => linkPath(d))
+        node.attr('opacity', d => (selected && d.kanji === selected.kanji) ? 1 : 0.85)
         node.attr('transform', d => `translate(${d.x},${d.y})`)
         node.select('circle').attr('r', 20).attr('fill', n => levelColor(n.jlpt))
+          .attr('stroke', n => (selected && n.kanji === selected.kanji) ? '#c0392b' : '#ffffff')
+          .attr('stroke-width', n => (selected && n.kanji === selected.kanji) ? 3.5 : 2)
         node.select('text').attr('x', 0).attr('y', 0).text(n => n.kanji)
       })
       .on('end', () => {
-        link.attr('x1', d => (d.source.x ?? d.x)).attr('y1', d => (d.source.y ?? d.y))
-           .attr('x2', d => (d.target.x ?? d.x)).attr('y2', d => (d.target.y ?? d.y))
+        link.attr('d', d => linkPath(d))
+        node.attr('opacity', d => (selected && d.kanji === selected.kanji) ? 1 : 0.85)
         node.attr('transform', d => `translate(${d.x},${d.y})`)
+        node.select('circle').attr('r', 20).attr('fill', n => levelColor(n.jlpt))
+          .attr('stroke', n => (selected && n.kanji === selected.kanji) ? '#c0392b' : '#ffffff')
+          .attr('stroke-width', n => (selected && n.kanji === selected.kanji) ? 3.5 : 2)
         node.select('text').attr('x', 0).attr('y', 0).text(n => n.kanji)
       })
     stateRef.current = { sim }
