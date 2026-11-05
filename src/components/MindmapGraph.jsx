@@ -5,11 +5,12 @@ import { levelColor } from '../lib/kanji'
 const WIDTH = 900
 const HEIGHT = 620
 
-export default function MindmapGraph({ nodes, selected, onSelect }) {
+export default function MindmapGraph({ nodes, links, selected, onSelect }) {
   const svgRef = useRef(null)
   const stateRef = useRef({ sim: null })
 
   const nodeKey = nodes.map(n => n.kanji).join(',')
+  const linkKey = (links || []).map(l => `${l.source}-${l.target}`).join(',')
 
   useEffect(() => {
     const svgEl = svgRef.current
@@ -17,7 +18,7 @@ export default function MindmapGraph({ nodes, selected, onSelect }) {
     const svg = d3.select(svgEl)
     svg.selectAll('*').remove()
     const g = svg.append('g').attr('class', 'mindmap-root')
-    const link = g.append('g').attr('class', 'mindmap-links').selectAll('line').data(nodes).join('line')
+    const link = g.append('g').attr('class', 'mindmap-links').selectAll('line').data(links || []).join('line')
       .attr('stroke', '#cfccc4').attr('stroke-width', 1.5).attr('class', 'mindmap-link')
     const node = g.append('g').attr('class', 'mindmap-nodes').selectAll('g').data(nodes).join('g')
       .attr('class', 'mindmap-node')
@@ -29,7 +30,7 @@ export default function MindmapGraph({ nodes, selected, onSelect }) {
     node.append('text').attr('text-anchor', 'middle').attr('dy', '0.35em').attr('class', 'mindmap-label')
 
     const sim = d3.forceSimulation(nodes)
-      .force('link', d3.forceLink(nodes).id(d => d.kanji).distance(90))
+      .force('link', d3.forceLink(links || []).id(d => d.kanji).distance(90))
       .force('charge', d3.forceManyBody().strength(-700))
       .force('center', d3.forceCenter(WIDTH / 2, HEIGHT / 2))
       .force('collide', d3.forceCollide(55))
@@ -61,7 +62,7 @@ export default function MindmapGraph({ nodes, selected, onSelect }) {
       stateRef.current = { sim: null }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeKey])
+  }, [nodeKey, linkKey])
 
   useEffect(() => {
     const { sim } = stateRef.current

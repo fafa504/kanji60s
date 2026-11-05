@@ -41,6 +41,23 @@ export default function Mindmap() {
     return list.slice(0, 120)
   }, [data, focus, related, level])
 
+  const links = useMemo(() => {
+    if (focus) {
+      return related.map(k => ({ source: focus.kanji, target: k.kanji }))
+    }
+    const list = kanjiByLevel(data, level)
+    const nodeList = list.slice(0, 120)
+    const out = []
+    for (let i = 0; i < nodeList.length; i++) {
+      for (let j = i + 1; j < nodeList.length; j++) {
+        if (sharesMeaning(nodeList[i], nodeList[j])) {
+          out.push({ source: nodeList[i].kanji, target: nodeList[j].kanji })
+        }
+      }
+    }
+    return out
+  }, [data, focus, related, level])
+
   if (loading) return <div className="container section"><p>Loading mindmap…</p></div>
 
   return (
@@ -79,7 +96,7 @@ export default function Mindmap() {
       ) : null}
 
       <div className="mindmap-wrap">
-        <MindmapGraph nodes={nodes} selected={focus} onSelect={setSelected} />
+        <MindmapGraph nodes={nodes} links={links} selected={focus} onSelect={setSelected} />
       </div>
 
       <div className="legend">
